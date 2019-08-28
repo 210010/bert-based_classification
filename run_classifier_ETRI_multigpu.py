@@ -431,11 +431,13 @@ class EmotionClassifierProcessor(DataProcessor):
     """Creates examples for the training and dev sets."""
     examples = []
     for (i, line) in enumerate(lines):
+      # Only the test set has a header
+      if set_type == "test" and i == 0:
+        continue
 
       if i<10:
           tf.logging.info("===================="+line[0])
-#      if set_type == "test" and i == 0:
-#        continue
+
 
       guid = "%s-%s" % (set_type, i)
       if set_type == "test":
