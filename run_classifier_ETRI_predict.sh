@@ -10,5 +10,5 @@ python run_classifier_ETRI_multigpu_hook.py \
   --data_dir=$BERT_BASE_DIR/ETRI_morp_TF/emo_dataset \
   --do_lower_case=False \
   --max_seq_length=128 \
-  --output_dir=$OUTPUT_DIR/emo_model_epoch3_withhook \
+  --output_dir=$OUTPUT_DIR/emo_model_epoch3_withhook_clsatt \
   --use_tpu=False  

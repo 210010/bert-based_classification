@@ -684,6 +684,15 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
   output_bias = tf.get_variable(
       "output_bias", [num_labels], initializer=tf.zeros_initializer())
 
+  ###domyoung ###
+  last_attention_map = model.get_last_attention_map() #[B,N,F,T]
+  cls_attention = tf.squeeze(last_attention_map[:, :, 0:1, :], axis=2) #[B,N,T]
+  cls_attention = tf.reduce_mean(cls_attention,axis=1) #[B, T]
+  
+  sum_weight = tf.reduce_sum(tf.math.square(cls_attention),axis=-1, keepdims=True) #[B,1]
+  nrmliz_cls_attention = cls_attention / tf.math.sqrt(sum_weight)    #[B,T]
+
+
   with tf.variable_scope("loss"):
     if is_training:
       # I.e., 0.1 dropout
@@ -699,7 +708,7 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
     per_example_loss = -tf.reduce_sum(one_hot_labels * log_probs, axis=-1)
     loss = tf.reduce_mean(per_example_loss)
 
-    return (loss, per_example_loss, logits, probabilities)
+    return (loss, per_example_loss, logits, probabilities,nrmliz_cls_attention)
 
 
 def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
@@ -726,7 +735,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
     is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
-    (total_loss, per_example_loss, logits, probabilities) = create_model(
+    (total_loss, per_example_loss, logits, probabilities, cls_att) = create_model(
         bert_config, is_training, input_ids, input_mask, segment_ids, label_ids,
         num_labels, use_one_hot_embeddings)
 
@@ -806,11 +815,11 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
     else:
       if FLAGS.use_tpu:
         output_spec = tf.contrib.tpu.TPUEstimatorSpec(
-            mode=mode, predictions={"probabilities": probabilities}, scaffold_fn=scaffold_fn)
+            mode=mode, predictions={"probabilities": probabilities, "cls_att":cls_att}, scaffold_fn=scaffold_fn)
       else:
         output_spec = tf.estimator.EstimatorSpec(
             mode=mode,
-            predictions={"probabilities": probabilities}
+            predictions={"probabilities": probabilities, "cls_att":cls_att}
         )
 
     return output_spec
@@ -1048,17 +1057,27 @@ def main(_):
     result = estimator.predict(input_fn=predict_input_fn)
 
     output_predict_file = os.path.join(FLAGS.output_dir, "test_results.tsv")
-    with tf.gfile.GFile(output_predict_file, "w") as writer:
+    cls_att_file = os.path.join(FLAGS.output_dir, "cls_att.tsv")
+    with tf.gfile.GFile(output_predict_file, "w") as writer, tf.gfile.GFile(cls_att_file, "w") as writer2:
       num_written_lines = 0
       tf.logging.info("***** Predict results *****")
       for (i, prediction) in enumerate(result):
         probabilities = prediction["probabilities"]
+        cls_atts = prediction["cls_att"]
         if i >= num_actual_predict_examples:
           break
+
         output_line = "\t".join(
             str(class_probability)
             for class_probability in probabilities) + "\n"
+
+        output_line2 = "\t".join(
+            str(cls_att)
+            for cls_att in cls_atts) + "\n"
+
         writer.write(output_line)
+        writer2.write(output_line2)
+
         num_written_lines += 1
     assert num_written_lines == num_actual_predict_examples
 
