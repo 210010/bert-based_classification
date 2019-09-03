@@ -2,7 +2,8 @@
 BERT_BASE_DIR="/root/workspace"
 #--init_checkpoint=$BERT_BASE_DIR/ETRI_morp_TF/model.ckpt-3816 \
 OUTPUT_DIR="/data2/bert_record/output"
-python run_classifier_ETRI_multigpu_hook.py \
+#python run_classifier_ETRI_multigpu_hook.py \
+python run_classifier_ETRI_multigpu_savepb.py \
   --task_name=emot \
   --vocab_file=$BERT_BASE_DIR/ETRI_morp_TF/vocab.korean_morp.list \
   --bert_config_file=$BERT_BASE_DIR/ETRI_morp_TF/bert_config.json \

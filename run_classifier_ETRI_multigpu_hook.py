@@ -689,8 +689,8 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
   cls_attention = tf.squeeze(last_attention_map[:, :, 0:1, :], axis=2) #[B,N,T]
   cls_attention = tf.reduce_mean(cls_attention,axis=1) #[B, T]
   
-  sum_weight = tf.reduce_sum(tf.math.square(cls_attention),axis=-1, keepdims=True) #[B,1]
-  nrmliz_cls_attention = cls_attention / tf.math.sqrt(sum_weight)    #[B,T]
+  #sum_weight = tf.reduce_sum(cls_attention,axis=-1, keepdims=True) #[B,1]
+  nrmliz_cls_attention = cls_attention     #[B,T]
 
 
   with tf.variable_scope("loss"):

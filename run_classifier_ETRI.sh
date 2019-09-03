@@ -16,5 +16,5 @@ python run_classifier_ETRI_multigpu_hook.py \
   --num_train_epochs=3.0 \
   --save_checkpoints_steps=1000 \
   --max_seq_length=128 \
-  --output_dir=$OUTPUT_DIR/emo_model_epoch3_withhook_clsatt \
+  --output_dir=$OUTPUT_DIR/emo_model_epoch3_withhook_clsatt2 \
   --use_tpu=False  

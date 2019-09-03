@@ -256,9 +256,15 @@ class BertModel(object):
       then performing layer normalization. This is the input to the transformer.
     """
     return self.embedding_output
+    
+  def get_last_attention_map(self):
+    #[B, N, F, T]
+    graph = tf.get_default_graph()
+    return graph.get_tensor_by_name("bert/encoder/layer_11/attention/self/attention_map:0")
 
   def get_embedding_table(self):
     return self.embedding_table
+
 
 
 def gelu(x):
@@ -717,8 +723,9 @@ def attention_layer(from_tensor,
 
   # Normalize the attention scores to probabilities.
   # `attention_probs` = [B, N, F, T]
-  attention_probs = tf.nn.softmax(attention_scores)
+  attention_probs = tf.nn.softmax(attention_scores) #the name of the operator is "Softmax"
 
+  attention_map = tf.identity(attention_probs, name="attention_map")
   # This is actually dropping out entire tokens to attend to, which might
   # seem a bit unusual, but is taken from the original Transformer paper.
   attention_probs = dropout(attention_probs, attention_probs_dropout_prob)
